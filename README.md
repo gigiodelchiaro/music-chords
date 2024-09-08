@@ -6,3 +6,5 @@ A fazer
 [ ] tablatura
 [ ] ritmo
 [ ] player
+[ ] Coda e outros símbolos
+[ ] números para auxiliar visualização do acorde ex. 7a casa
