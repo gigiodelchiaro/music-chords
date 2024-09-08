@@ -13,15 +13,21 @@
     <label for="chordInput">Lista de acordes</label>
     <textarea id="chordInput"
 >title: Título;
-author: autor
+author: autor;
+style: samba
 %%%
+D7(9) 2
 </textarea>
-
+<input type="file" id="fileInput" accept=".json">
+<button id="uploadButton">Upload Chords</button>
     <button onclick="generateDocument()">Gerar</button>
+
     </div>
     <div id="header">
         <h2 id="title"></h2>
         <h3 id="author"></h3>
+        <h3 id="capo"></h3>
+        <div id="style"></div>
     </div>
     <div id="resultContainer"></div>
 

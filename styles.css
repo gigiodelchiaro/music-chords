@@ -70,6 +70,9 @@ text {
     text-anchor: middle;
     dominant-baseline: middle;
 }
+#style {
+    display:none;
+}
 @media print
 {
     #hide {
