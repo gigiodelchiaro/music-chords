@@ -1,9 +1,10 @@
-
 const chordDict = {
     'C': '(2, 1, 1), (4, 2, 2), (5, 3, 3)',
     'G': '(5, 2, 1), (6, 3, 2), (2, 3, 3), (1, 3, 4)',
-    'D': '(1, 2, 2), (2, 3, 3), (3, 2, 1)'
+    'D': '(1, 2, 2), (2, 3, 3), (3, 2, 1)',
+    'F': '(1-6, 1), (3, 2, 2), (4, 3, 4), (5, 3, 3)' // Here, '1-6, 1' represents a line
 };
+
 function drawChordGrid(coordinates, svgElement, gridWidth = 5, gridHeight = 5, cellWidth = 30, cellHeight = 40, radius = 10) {
     svgElement.innerHTML = ''; // Clear previous SVG content
     svgElement.style.width = `${gridWidth * cellWidth + 2 * radius}px`;
@@ -32,29 +33,52 @@ function drawChordGrid(coordinates, svgElement, gridWidth = 5, gridHeight = 5, c
         svgElement.appendChild(line);
     }
 
-    // Parse and place circles at coordinates
+    // Parse and place circles or lines at coordinates
     coordinates.forEach(coord => {
-        const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
-        if (x >= 1 && x <= 6 && y >= 1 && y <= 6) {
-            const cx = (gridWidth - x + 1) * cellWidth + radius;
-            const cy = (y - 1) * cellHeight + cellHeight / 2;
+        // Check if it's a line or a regular circle
+        if (coord.includes('-')) {
+            // Handle lines: e.g., '(1-6, 1)'
+            const [xRange, y] = coord.replace(/[()]/g, '').split(',').map(part => part.trim());
+            const [x1, x2] = xRange.split('-').map(Number);
+            const yCoord = parseInt(y);
 
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', cx);
-            circle.setAttribute('cy', cy);
-            circle.setAttribute('r', radius);
-            circle.setAttribute('fill', '#000');
+            // Calculate line positions
+            const x1Pos = (gridWidth - x1 + 1) * cellWidth + radius;
+            const x2Pos = (gridWidth - x2 + 1) * cellWidth + radius;
+            const yPos = (yCoord - 1) * cellHeight + cellHeight / 2;
 
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', cx);
-            text.setAttribute('y', cy);
-            text.setAttribute('fill', '#FFF');
-            text.setAttribute('text-anchor', 'middle');
-            //text.setAttribute('dy', '.35em'); // Center the text vertically
-            text.textContent = z;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1Pos);
+            line.setAttribute('y1', yPos);
+            line.setAttribute('x2', x2Pos);
+            line.setAttribute('y2', yPos);
+            line.setAttribute('stroke', '#000');
+            line.setAttribute('stroke-width', radius);  // Line width matches 2 * radius of circles
+            line.setAttribute('stroke-linecap', 'round'); // Rounded corners
+            svgElement.appendChild(line);
+        } else {
+            // Handle regular circles: e.g., '(3, 2, 1)'
+            const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
+            if (x >= 1 && x <= 6 && y >= 1 && y <= 6) {
+                const cx = (gridWidth - x + 1) * cellWidth + radius;
+                const cy = (y - 1) * cellHeight + cellHeight / 2;
 
-            svgElement.appendChild(circle);
-            svgElement.appendChild(text);
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', cx);
+                circle.setAttribute('cy', cy);
+                circle.setAttribute('r', radius);
+                circle.setAttribute('fill', '#000');
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', cx);
+                text.setAttribute('y', cy);
+                text.setAttribute('fill', '#FFF');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = z;
+
+                svgElement.appendChild(circle);
+                svgElement.appendChild(text);
+            }
         }
     });
 }
@@ -116,7 +140,7 @@ function generateChords(chordInput) {
 
         // Get the coordinates from the dictionary and generate SVG
         if (chordDict[chord]) {
-            const coordinates = chordDict[chord].match(/\(\d+,\s?\d+,\s?\d+\)/g);
+            const coordinates = chordDict[chord].match(/\(?\d+(-\d+)?,\s?\d+(,\s?\d+)?\)?/g); // Adjusted regex to match lines and circles
             drawChordGrid(coordinates, chordSvg); // Reuse function to draw SVG for this chord
         } else {
             const noImageText = document.createElement('div');
@@ -151,12 +175,10 @@ function generateChords(chordInput) {
     }
 }
 
-
-
 function generateDocument(){
     const parts = document.getElementById('chordInput').value.split("\n%%%\n");
     parts[0].split(';\n').forEach(element => {
-        e = element.split(': ');
+        const e = element.split(': ');
         document.getElementById(e[0]).innerHTML = e[1];        
     });
     generateChords(parts[1]);
