@@ -1,14 +1,14 @@
 
 const chordDict = {
     'C': '(2, 1, 1), (4, 2, 2), (5, 3, 3)',
-    'G': '(5, 2, 1), (6, 3, 2), (2, 3, 3), (1, 3, 4)'
+    'G': '(5, 2, 1), (6, 3, 2), (2, 3, 3), (1, 3, 4)',
+    'D': '(1, 2, 2), (2, 3, 3), (3, 2, 1)'
 };
-
-// Function to draw a grid and place the circles based on coordinates
 function drawChordGrid(coordinates, svgElement, gridWidth = 5, gridHeight = 5, cellWidth = 30, cellHeight = 40, radius = 10) {
     svgElement.innerHTML = ''; // Clear previous SVG content
-    svgElement.style.width = `${gridWidth*cellWidth + 2*radius}px`;
-    svgElement.style.height = `${gridHeight*cellHeight + 2*radius}px`;
+    svgElement.style.width = `${gridWidth * cellWidth + 2 * radius}px`;
+    svgElement.style.height = `${gridHeight * cellHeight + 2 * radius}px`;
+
     // Draw grid lines
     for (let i = 0; i <= gridWidth; i++) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -28,20 +28,13 @@ function drawChordGrid(coordinates, svgElement, gridWidth = 5, gridHeight = 5, c
         line.setAttribute('x2', gridWidth * cellWidth + radius);
         line.setAttribute('y2', i * cellHeight);
         line.setAttribute('stroke', '#000');
-        if (i == 0) {
-            line.setAttribute('stroke-width', '10');
-        }
-        else
-        {
-            line.setAttribute('stroke-width', '2');
-        }
+        line.setAttribute('stroke-width', i === 0 ? '10' : '2');
         svgElement.appendChild(line);
     }
 
     // Parse and place circles at coordinates
     coordinates.forEach(coord => {
         const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
-
         if (x >= 1 && x <= 6 && y >= 1 && y <= 6) {
             const cx = (gridWidth - x + 1) * cellWidth + radius;
             const cy = (y - 1) * cellHeight + cellHeight / 2;
@@ -56,6 +49,8 @@ function drawChordGrid(coordinates, svgElement, gridWidth = 5, gridHeight = 5, c
             text.setAttribute('x', cx);
             text.setAttribute('y', cy);
             text.setAttribute('fill', '#FFF');
+            text.setAttribute('text-anchor', 'middle');
+            //text.setAttribute('dy', '.35em'); // Center the text vertically
             text.textContent = z;
 
             svgElement.appendChild(circle);
@@ -76,12 +71,27 @@ function generateChords(chordInput) {
 
     const chordEntries = chordInput.split(' ').filter(entry => entry !== '');
 
-    for (let i = 0; i < chordEntries.length; i += 2) {
-        const chord = chordEntries[i];
-        const duration = parseInt(chordEntries[i + 1]);
+    let isGroup = false;
+    let groupDiv = null;
 
+    for (let i = 0; i < chordEntries.length; i += 2) {
+        let chord = chordEntries[i];
+        let duration = parseInt(chordEntries[i + 1]);
+
+        // If opening curly brace, start a new chord group
+        if (chord.startsWith('{')) {
+            isGroup = true;
+            chord = chord.replace('{', ''); // Remove opening curly brace
+
+            // Create a new group div
+            groupDiv = document.createElement('div');
+            groupDiv.classList.add('chord-group');
+            resultContainer.appendChild(groupDiv);
+        }
+
+        // Skip invalid chords/durations
         if (!chord || isNaN(duration)) {
-            continue; // Skip if chord or duration is invalid
+            continue;
         }
 
         // Create a container div for each chord
@@ -91,11 +101,13 @@ function generateChords(chordInput) {
         // Display duration in stick counting format
         const durationText = document.createElement('div');
         durationText.textContent = convertToStickCounting(duration);
+        durationText.classList.add('chord-duration');
         chordDiv.appendChild(durationText);
 
         // Display chord name
         const chordNameText = document.createElement('div');
         chordNameText.textContent = chord;
+        chordNameText.classList.add('chord-name');
         chordDiv.appendChild(chordNameText);
 
         // Create an SVG element to display the chord diagram
@@ -112,10 +124,34 @@ function generateChords(chordInput) {
             chordDiv.appendChild(noImageText);
         }
 
-        // Append the chord div to the result container
-        resultContainer.appendChild(chordDiv);
+        // Append the chord div to the result container or group
+        if (isGroup && groupDiv) {
+            groupDiv.appendChild(chordDiv);
+        } else {
+            resultContainer.appendChild(chordDiv);
+        }
+
+        // If closing curly brace, finalize the group and attach ID
+        if (chordEntries[i + 1].includes('}')) {
+            // Extract the group ID and remove the closing curly brace
+            const elements = chordEntries[i + 1].split('}')[1].split('-')
+            const groupId = elements[1];
+            const text = elements[2];
+            if (groupDiv && groupId) {
+                groupDiv.id = groupId;
+            }
+            if (groupDiv && text) {
+                groupDiv.innerHTML += text;
+            }
+            // Set duration correctly and end the group
+            duration = parseInt(chordEntries[i + 1].replace('}', '').split('-')[0]);
+            isGroup = false;  // Close the group
+            groupDiv = null;  // Reset the groupDiv for the next iteration
+        }
     }
 }
+
+
 
 function generateDocument(){
     const parts = document.getElementById('chordInput').value.split("\n%%%\n");

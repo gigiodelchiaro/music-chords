@@ -35,7 +35,8 @@ button:hover {
     width: 210mm;
 }
 .chord-group {
-    border: #ccc 1px;
+    border: #ccc 1px solid;
+    display: flex;
 }
 .chord-item {
     display: flex;
