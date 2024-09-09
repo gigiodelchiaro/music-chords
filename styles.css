@@ -73,6 +73,17 @@ text {
 #style {
     display:none;
 }
+.empty {
+    fill: none;
+    stroke: #000;
+}
+.full {
+    fill: #000;
+}
+.finger {
+    fill: #FFF;
+    text-anchor: middle;
+}
 @media print
 {
     #hide {

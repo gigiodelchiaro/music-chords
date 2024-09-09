@@ -1,27 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="styles.css" />
     <title>Visualizador de acordes</title>
-    
+
 </head>
+
 <body>
     <div id="hide">
-    <h1>Visualizador de acordes</h1>
-    <label for="chordInput">Lista de acordes</label>
-    <textarea id="chordInput"
->title: Título;
-author: autor;
+        <h1>Visualizador de acordes</h1>
+        <label for="chordInput">Lista de acordes</label>
+        <textarea id="chordInput">title: Onde anda você;
+capo: Capo 2;
 style: samba
 %%%
-D7(9) 2
+D7(9) 2 G7(13) 1 G7(13-) 1 C7M 2 Em7 1 Eb° 1 Dm7 2 G6(9) 2 C7M 1 Fm/C 1 C7M 1 A7(13-) 1
 </textarea>
-<input type="file" id="fileInput" accept=".json">
-<button id="uploadButton">Upload Chords</button>
-    <button onclick="generateDocument()">Gerar</button>
+        <input type="file" id="fileInput" accept=".json">
+        <button id="uploadButton">Upload Chords</button>
+        <button onclick="generateDocument()">Gerar</button>
+        <div id="css">
+            <label for="cellWidthSlider">Cell Width</label>
 
+            <input id="cellWidthSlider" min="10" max="100" value="30">
+
+            <label for="cellHeightSlider">Cell Height</label>
+            <input id="cellHeightSlider" min="10" max="100" value="40">
+
+            <label for="radiusSlider">Radius</label>
+            <input id="radiusSlider" min="5" max="50" value="10">
+
+            <label for="strokeSlider">Stroke</label>
+            <input id="strokeSlider" min="1" max="10" value="2">
+
+            <label for="smallRadiusSlider">Small Radius</label>
+            <input id="smallRadiusSlider" min="1" max="20" value="5">
+        </div>
     </div>
     <div id="header">
         <h2 id="title"></h2>
@@ -34,4 +51,5 @@ D7(9) 2
     <script src="script.js"></script>
 
 </body>
+
 </html>
