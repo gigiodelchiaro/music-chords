@@ -68,7 +68,7 @@ button:hover {
 text {
     font-size: 12px;
     text-anchor: middle;
-    dominant-baseline: middle;
+    dominant-baseline: central;
 }
 #style {
     display:none;
@@ -77,8 +77,9 @@ text {
     fill: none;
     stroke: #000;
 }
-.full {
+.full{
     fill: #000;
+    stroke: #000;
 }
 .finger {
     fill: #FFF;
@@ -89,4 +90,7 @@ text {
     #hide {
         display: none;
     }
+}
+.line-round {
+    stroke-linecap: round;
 }

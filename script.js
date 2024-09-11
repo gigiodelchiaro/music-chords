@@ -1,40 +1,5 @@
-/*
-update svg
-svgElement.style.width = `${gridWidth * cellWidth + 2 * radius + stroke}px`;
-svgElement.style.height = `${gridHeight * cellHeight + 2 * radius + stroke + smallRadius}px`;
-
-update line y
-line.setAttribute('x1', i * cellWidth + radius);
-line.setAttribute('y1', 0);
-line.setAttribute('x2', i * cellWidth + radius);
-line.setAttribute('y2', gridHeight * cellHeight);
-line.setAttribute('stroke', '#000');
-line.setAttribute('stroke-width', (stroke).toString());
-
-update line x
-line.setAttribute('x1', radius);
-line.setAttribute('y1', i * cellHeight);
-line.setAttribute('x2', gridWidth * cellWidth + radius);
-line.setAttribute('y2', i * cellHeight);
-line.setAttribute('stroke', '#000');
-line.setAttribute('stroke-width', i === 0 ? (5*stroke).toString() : (stroke).toString());
-
-update small circle 
-circle.setAttribute('cx', (gridWidth - string + 1) * cellWidth + radius);
-circle.setAttribute('cy', cellHeight*gridHeight + radius + 2*stroke);
-circle.setAttribute('r', smallRadius);
-
-update big circle and text
-const cx = (gridWidth - x + 1) * cellWidth + radius;
-const cy = (y - 1) * cellHeight + cellHeight / 2;
-
-circle.setAttribute('cx', cx);
-circle.setAttribute('cy', cy);
-circle.setAttribute('r', radius);
-
-text.setAttribute('x', cx);
-text.setAttribute('y', cy);
-*/ 
+const gridHeight = 6;
+const gridWidth = 6;
 class Chord {
     constructor(name, shape, essential, exclude = []) {
         this.name = name;
@@ -77,87 +42,136 @@ document.getElementById('uploadButton').addEventListener('click', () => {
         }
     };
     reader.readAsText(file);
-});
-function update_css(svgElement, gridWidth = 5, gridHeight = 5) {
-    const cellWidth = parseInt(document.getElementById('cellWidthSlider').value);
-    const cellHeight = parseInt(document.getElementById('cellHeightSlider').value);
-    const radius = parseInt(document.getElementById('radiusSlider').value);
-    const stroke = parseInt(document.getElementById('strokeSlider').value);
-    const smallRadius = parseInt(document.getElementById('smallRadiusSlider').value);
-    // Update the svgElement size
-    svgElement.style.width = `${gridWidth * cellWidth + 2 * radius + stroke}px`;
-    svgElement.style.height = `${gridHeight * cellHeight + 2 * radius + stroke + smallRadius}px`;
+});function update_css() {
+    // Ensure we get proper numeric values, otherwise default to 0
+    const cellWidth = parseInt(document.getElementById('cellWidthSlider').value) || 0;
+    const cellHeight = parseInt(document.getElementById('cellHeightSlider').value) || 0;
+    const stroke = parseInt(document.getElementById('strokeSlider').value) || 0;
+    const smallRadius = parseInt(document.getElementById('smallRadiusSlider').value) || 0;
+    const radius = parseInt(document.getElementById('radiusSlider').value) || 0;
+    // Create or select the style element in the head to update
+    let styleElement = document.getElementById('dynamicStyles');
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = 'dynamicStyles';
+        document.head.appendChild(styleElement);
+    }
 
-    // Update Y-axis grid lines (vertical)
-    const yLines = svgElement.querySelectorAll('.lineY');
-    yLines.forEach((line, i) => {
-        line.setAttribute('x1', i * cellWidth + radius);
-        line.setAttribute('y1', 0);
-        line.setAttribute('x2', i * cellWidth + radius);
-        line.setAttribute('y2', gridHeight * cellHeight);
-        line.setAttribute('stroke', '#000');
-        line.setAttribute('stroke-width', stroke.toString());
+    // Generate CSS dynamically
+    let styles = `
+        svg {
+            width: ${(gridWidth - 1) * (cellWidth) + 2 * (radius)}px;
+            height: ${(gridHeight - 1) * (cellHeight) + radius + 2*smallRadius}px;
+        }
+        .lineY {
+            stroke-width: ${stroke}px;
+        }
+        .lineX {
+            stroke-width: ${stroke}px;
+        }
+        .lineX[index="0"] {
+            stroke-width: ${5 * stroke}px;
+        }
+        .line-round {
+            stroke-width: ${radius};
+        }
+        .small {
+            r: ${smallRadius}px;
+            stroke-width: ${stroke}px;
+            cy: ${(gridHeight - 1) * cellHeight + radius}px;
+        }
+        .big {
+            r: ${radius - stroke}px;
+        }
+        .finger {
+            font-size: ${2*radius - 2*stroke}px;
+        }
+    `;
+    
+    const yLines = document.querySelectorAll('.lineY');
+    yLines.forEach((lineY) => {
+        const index = parseInt(lineY.getAttribute('index')) || 0;
+        const xPos = index * cellWidth + radius;
+        lineY.setAttribute('x1', `${xPos}px`);
+        lineY.setAttribute('x2', `${xPos}px`);
+        lineY.setAttribute('y1', '0px');
+        lineY.setAttribute('y2', `${(gridHeight - 1) * cellHeight + stroke/2}px`);
     });
 
-    // Update X-axis grid lines (horizontal)
-    const xLines = svgElement.querySelectorAll('.lineX');
-    xLines.forEach((line, i) => {
-        line.setAttribute('x1', radius);
-        line.setAttribute('y1', i * cellHeight);
-        line.setAttribute('x2', gridWidth * cellWidth + radius);
-        line.setAttribute('y2', i * cellHeight);
-        line.setAttribute('stroke', '#000');
-        line.setAttribute('stroke-width', i === 0 ? (5 * stroke).toString() : stroke.toString());
+    // Update X lines
+    const xLines = document.querySelectorAll('.lineX');
+    xLines.forEach((lineX) => {
+        const index = parseInt(lineX.getAttribute('index')) || 0;
+        const yPos = index * cellHeight;
+        lineX.setAttribute('y1', `${yPos}px`);
+        lineX.setAttribute('y2', `${yPos}px`);
+        lineX.setAttribute('x1', `${radius}px`);
+        lineX.setAttribute('x2', `${(gridWidth - 1) * cellWidth + radius}px`);
     });
-
-    // Update small circles (essential chord positions)
-    const smallCircles = svgElement.querySelectorAll('.small');
-    smallCircles.forEach((circle) => {
-        const string = parseInt(circle.getAttribute('x_coord')); // Extract string number from x_coord
-        circle.setAttribute('cx', (gridWidth - string + 1) * cellWidth + radius);
-        console.log((cellHeight * gridHeight + radius + 2 * stroke).toString());
-        circle.setAttribute('cy', (cellHeight * gridHeight + radius + 2 * stroke).toString());
-        circle.setAttribute('r', smallRadius);
-        circle.setAttribute('stroke-width', stroke);
+    const roundLines = document.querySelectorAll('.line-round');
+    roundLines.forEach((lineR) => {
+        const x1 = parseInt(lineR.getAttribute('x_coord1'));
+        const x2 = parseInt(lineR.getAttribute('x_coord2'));
+        const yPos = parseInt(lineR.getAttribute('y_coord') - 1) * cellHeight + cellHeight / 2;
+        lineR.setAttribute('x1', (gridWidth - x1 + 1) * cellWidth - radius);
+        lineR.setAttribute('x2', (gridWidth - x2) * cellWidth);
+        lineR.setAttribute('y1', yPos);
+        lineR.setAttribute('y2', yPos);
     });
+    // Update circles and finger text positions
+    for (let x = 0; x < gridWidth; x++) {
+        const cx = (gridWidth - x - 1) * cellWidth + radius;
+        styles += `
+        circle[x_coord="${x + 1}"] {
+            cx: ${cx}px;
+        }
+        .finger[x_coord="${x + 1}"] {
+            x: ${cx}px;
+        }
+        `;
+    }
 
-    // Update big circles and corresponding text (fretboard positions)
-    const bigCircles = svgElement.querySelectorAll('.big');
-    bigCircles.forEach((circle) => {
-        const x = parseInt(circle.getAttribute('x_coord')); // X coordinate (string number)
-        const y = parseInt(circle.getAttribute('y_coord')); // Y coordinate (fret number)
-        const cx = (gridWidth - x + 1) * cellWidth + radius;
-        const cy = (y - 1) * cellHeight + cellHeight / 2;
-        circle.setAttribute('cx', cx);
-        circle.setAttribute('cy', cy);
-        circle.setAttribute('r', radius);
-    });
+    for (let y = 0; y < gridHeight; y++) {
+        const cy = y * cellHeight + cellHeight / 2;
+        styles += `
+            circle[y_coord="${y + 1}"] {
+                cy: ${cy}px;
+            }
+            .finger[y_coord="${y + 1}"] {
+                y: ${cy}px;
+            }
+        `;
+    }
 
-    // Update the text elements (finger positions)
-    const texts = svgElement.querySelectorAll('.finger');
-    texts.forEach((text) => {
-        const x = parseInt(text.getAttribute('x_coord')); // X coordinate (string number)
-        const y = parseInt(text.getAttribute('y_coord')); // Y coordinate (fret number)
-        const cx = (gridWidth - x + 1) * cellWidth + radius;
-        const cy = (y - 1) * cellHeight + cellHeight / 2;
-        text.setAttribute('x', cx);
-        text.setAttribute('y', cy);
+    // Update the content of the style element
+    styleElement.innerHTML = styles;
+
+    // Directly update finger text elements
+    const fingerTexts = document.querySelectorAll('.finger');
+    fingerTexts.forEach((text) => {
+        const x_coord = parseInt(text.getAttribute('x_coord')) || 0;
+        const y_coord = parseInt(text.getAttribute('y_coord')) || 0;
+        const x = (gridWidth - x_coord) * cellWidth + radius;
+        const y = (y_coord - 1) * cellHeight + cellHeight / 2;
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
     });
 }
-function drawChordGrid(chord, svgElement, style, gridWidth = 5, gridHeight = 5) {
+
+function drawChordGrid(chord, svgElement, style) {
     svgElement.innerHTML = '';
 
-    for (let i = 0; i <= gridWidth; i++) {
+    for (let i = 0; i < gridWidth; i++) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('index', i)
-        line.classList.add('lineY');
+        line.classList.add('lineY', 'full');
         svgElement.appendChild(line);
     }
 
-    for (let i = 0; i <= gridHeight; i++) {
+    for (let i = 0; i < gridHeight; i++) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('index', i)
-        line.classList.add('lineX');
+        line.classList.add('lineX', 'full');
         svgElement.appendChild(line);
     }
     if (style == "samba") {
@@ -177,29 +191,18 @@ function drawChordGrid(chord, svgElement, style, gridWidth = 5, gridHeight = 5) 
 
     chord.shape.match(/\(?\d+(-\d+)?,\s?\d+(,\s?\d+)?\)?/g).forEach(coord => {
         if (coord.includes('-')) {
-            /*
-            Leave this comment here
             const [xRange, y] = coord.replace(/[()]/g, '').split(',').map(part => part.trim());
             const [x1, x2] = xRange.split('-').map(Number);
-            const yCoord = parseInt(y);
-
-            const x1Pos = (gridWidth - x1 + 1) * cellWidth + radius;
-            const x2Pos = (gridWidth - x2 + 1) * cellWidth + radius;
-            const yPos = (yCoord - 1) * cellHeight + cellHeight / 2;
-
+           
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x1Pos);
-            line.setAttribute('y1', yPos);
-            line.setAttribute('x2', x2Pos);
-            line.setAttribute('y2', yPos);
-            line.setAttribute('stroke', '#000');
-            line.setAttribute('stroke-width', radius); 
-            line.setAttribute('stroke-linecap', 'round');
+            line.setAttribute('x_coord1', x1);
+            line.setAttribute('x_coord2', x2);
+            line.setAttribute('y_coord', y);
+            line.classList.add('line-round', 'full');
             svgElement.appendChild(line);
-            */
         } else {
             const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
-            if (x >= 1 && x <= 6 && y >= 1 && y <= 6) {
+            if (x >= 1 && x <= gridWidth && y >= 1 && y <= gridHeight) {
 
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.classList.add('full');
@@ -218,7 +221,6 @@ function drawChordGrid(chord, svgElement, style, gridWidth = 5, gridHeight = 5) 
             }
         }
     });
-    update_css(svgElement);
 }
 
 function convertToStickCounting(duration) {
@@ -264,7 +266,7 @@ function generateChords(chordInput, style = "default") {
         chordDiv.appendChild(chordNameText);
 
         const chordSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        chordSvg.id = 'SvgElement';
+        chordSvg.classList.add('SvgElement');
         chordDiv.appendChild(chordSvg);
 
         if (chordDict[chord]) {
@@ -296,4 +298,5 @@ function generateDocument() {
     });
     const style = document.getElementById('style').innerHTML;
     generateChords(parts[1], style);
+    update_css();
 }
