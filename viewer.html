@@ -3,20 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="styles.css" />
-    <title>Visualizador de acordes</title>
-    
+    <title>Chord Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        select {
+            margin-bottom: 20px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        #chordDisplay {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+        }
+        .chord-name {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .chord-shape {
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <script src="script.js"></script>
-   
-    <h1>Visualizador de acordes</h1>
-    <svg id="resultContainer"></svg>
-    
+    <h1>Chord Viewer</h1>
+    <select id="chordSelect">
+        <option value="">Select a chord</option>
+    </select>
+    <div id="chordDisplay"></div>
+
     <script>
-    drawChordGrid([1, 1, 1], document.getElementById("resultContainer"), 5, 5, 120, 160, 40);
+        const gridHeight = 6;
+        const gridWidth = 6;
+        let chords = [];
+
+        // Load JSON data
+        fetch('chords.json')
+            .then(response => response.json())
+            .then(data => {
+                chords = data;
+                populateChordSelect();
+            })
+            .catch(error => console.error('Error loading JSON:', error));
+
+        function populateChordSelect() {
+            const select = document.getElementById('chordSelect');
+            chords.forEach(chord => {
+                const option = document.createElement('option');
+                option.value = chord.name;
+                option.textContent = chord.name;
+                select.appendChild(option);
+            });
+        }
+
+        document.getElementById('chordSelect').addEventListener('change', function() {
+            const selectedChord = chords.find(chord => chord.name === this.value);
+            if (selectedChord) {
+                renderChord(selectedChord);
+            } else {
+                document.getElementById('chordDisplay').innerHTML = '';
+            }
+        });
+
+        function renderChord(chord) {
+            const displayDiv = document.getElementById('chordDisplay');
+            displayDiv.innerHTML = `
+                <div class="chord-name">${chord.name}</div>
+                <div class="chord-shape">Shape: ${chord.shape}</div>
+            `;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '300');
+            svg.setAttribute('height', '400');
+            displayDiv.appendChild(svg);
+
+            drawChordGrid(chord, svg);
+        }
+
+        function drawChordGrid(chord, svgElement) {
+            const cellWidth = 50;
+            const cellHeight = 60;
+            const radius = 20;
+            const stroke = 2;
+
+            // Draw vertical lines
+            for (let i = 0; i < gridWidth; i++) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', i * cellWidth + radius);
+                line.setAttribute('x2', i * cellWidth + radius);
+                line.setAttribute('y1', '0');
+                line.setAttribute('y2', (gridHeight - 1) * cellHeight);
+                line.setAttribute('stroke', 'black');
+                line.setAttribute('stroke-width', stroke);
+                svgElement.appendChild(line);
+            }
+
+            // Draw horizontal lines
+            for (let i = 0; i < gridHeight; i++) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('y1', i * cellHeight);
+                line.setAttribute('y2', i * cellHeight);
+                line.setAttribute('x1', radius);
+                line.setAttribute('x2', (gridWidth - 1) * cellWidth + radius);
+                line.setAttribute('stroke', 'black');
+                line.setAttribute('stroke-width', i === 0 ? stroke * 5 : stroke);
+                svgElement.appendChild(line);
+            }
+
+            // Draw chord shape
+            chord.shape.match(/\(?\d+(-\d+)?,\s?\d+(,\s?\d+)?\)?/g).forEach(coord => {
+                if (coord.includes('-')) {
+                    const [xRange, y] = coord.replace(/[()]/g, '').split(',').map(part => part.trim());
+                    const [x1, x2] = xRange.split('-').map(Number);
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', (gridWidth - x1) * cellWidth);
+                    line.setAttribute('x2', (gridWidth - x2 + 1) * cellWidth);
+                    line.setAttribute('y1', (y - 1) * cellHeight + cellHeight / 2);
+                    line.setAttribute('y2', (y - 1) * cellHeight + cellHeight / 2);
+                    line.setAttribute('stroke', 'black');
+                    line.setAttribute('stroke-width', radius);
+                    line.setAttribute('stroke-linecap', 'round');
+                    svgElement.appendChild(line);
+                } else {
+                    const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
+                    if (x >= 1 && x <= gridWidth && y >= 1 && y <= gridHeight) {
+                        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        circle.setAttribute('cx', (gridWidth - x) * cellWidth + radius);
+                        circle.setAttribute('cy', (y - 1) * cellHeight + cellHeight / 2);
+                        circle.setAttribute('r', radius - stroke);
+                        circle.setAttribute('fill', 'black');
+                        svgElement.appendChild(circle);
+
+                        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('x', (gridWidth - x) * cellWidth + radius);
+                        text.setAttribute('y', (y - 1) * cellHeight + cellHeight / 2);
+                        text.setAttribute('text-anchor', 'middle');
+                        text.setAttribute('dominant-baseline', 'central');
+                        text.setAttribute('fill', 'white');
+                        text.setAttribute('font-size', radius);
+                        text.textContent = z;
+                        svgElement.appendChild(text);
+                    }
+                }
+            });
+
+            // Draw small circles for essential strings
+            chord.essential.forEach(string => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', (gridWidth - string) * cellWidth + radius);
+                circle.setAttribute('cy', (gridHeight - 1) * cellHeight + radius);
+                circle.setAttribute('r', 5);
+                circle.setAttribute('fill', chord.essential.at(-1) != string ? 'black' : 'white');
+                circle.setAttribute('stroke', 'black');
+                circle.setAttribute('stroke-width', 2);
+                svgElement.appendChild(circle);
+            });
+        }
     </script>
-    Nome: <input type="text">
-    <button type="submit">Enviar</button>
 </body>
 </html>
