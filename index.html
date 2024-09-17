@@ -20,24 +20,23 @@ style: samba
 D7(9) 2 G7(13) 1 G7(13-) 1 C7M 2 Em7 1 Eb° 1 Dm7 2 G6(9) 2 C7M 1 Fm/C 1 C7M 1 A7(13-) 1
 </textarea>
         <input type="file" id="fileInput" accept=".json">
-        <button id="uploadButton">Upload Chords</button>
         <button onclick="generateDocument()">Gerar</button>
         <div id="css">
-            <label for="cellWidthSlider">Cell Width</label>
+            <label for="cellWidth">Cell Width</label>
 
-            <input id="cellWidthSlider" min="10" max="100" value="30">
+            <input id="cellWidth" min="10" max="100" value="30">
 
-            <label for="cellHeightSlider">Cell Height</label>
-            <input id="cellHeightSlider" min="10" max="100" value="40">
+            <label for="cellHeight">Cell Height</label>
+            <input id="cellHeight" min="10" max="100" value="40">
 
-            <label for="radiusSlider">Radius</label>
-            <input id="radiusSlider" min="5" max="50" value="12">
+            <label for="radius">Radius</label>
+            <input id="radius" min="5" max="50" value="12">
 
-            <label for="strokeSlider">Stroke</label>
-            <input id="strokeSlider" min="1" max="10" value="2">
+            <label for="stroke">Stroke</label>
+            <input id="stroke" min="1" max="10" value="2">
 
-            <label for="smallRadiusSlider">Small Radius</label>
-            <input id="smallRadiusSlider" min="1" max="20" value="7">
+            <label for="smallRadius">Small Radius</label>
+            <input id="smallRadius" min="1" max="20" value="7">
         </div>
     </div>
     <div id="header">
@@ -46,6 +45,7 @@ D7(9) 2 G7(13) 1 G7(13-) 1 C7M 2 Em7 1 Eb° 1 Dm7 2 G6(9) 2 C7M 1 Fm/C 1 C7M 1 A
         <h3 id="capo"></h3>
         <div id="style"></div>
     </div>
+
     <div id="resultContainer"></div>
 
     <script src="script.js"></script>

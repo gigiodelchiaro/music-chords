@@ -94,3 +94,10 @@ text {
 .line-round {
     stroke-linecap: round;
 }
+.preview {
+    opacity: 0;
+}
+
+.preview:hover {
+    opacity: 1;
+}

@@ -12,8 +12,7 @@ class Chord {
 let chords = [];
 
 let chordDict = {};
-
-document.getElementById('uploadButton').addEventListener('click', () => {
+document.getElementById('fileInput').addEventListener('change', () => {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
 
@@ -26,7 +25,7 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     reader.onload = function(event) {
         try {
             const jsonContent = JSON.parse(event.target.result);
-            chords = jsonContent.map(chordData => new Chord(
+            chords = jsonContent.chords.map(chordData => new Chord(
                 chordData.name, 
                 chordData.shape,
                 chordData.essential,
@@ -36,20 +35,23 @@ document.getElementById('uploadButton').addEventListener('click', () => {
                 dict[chord.name] = new Chord(chord.name, chord.shape, chord.essential, chord.exclude);
                 return dict;
             }, {});
+
+            // Update input values based on style attribute
+            if (jsonContent.style) {
+                document.getElementById('cellWidth').value = jsonContent.style.cellWidth;
+                document.getElementById('cellHeight').value = jsonContent.style.cellHeight;
+                document.getElementById('radius').value = jsonContent.style.radius;
+                document.getElementById('stroke').value = jsonContent.style.stoke;
+                document.getElementById('smallRadius').value = jsonContent.style.smallRadius;
+            }
         } catch (e) {
             alert("Error parsing JSON file.");
             console.error(e);
         }
     };
     reader.readAsText(file);
-});function update_css() {
-    // Ensure we get proper numeric values, otherwise default to 0
-    const cellWidth = parseInt(document.getElementById('cellWidthSlider').value) || 0;
-    const cellHeight = parseInt(document.getElementById('cellHeightSlider').value) || 0;
-    const stroke = parseInt(document.getElementById('strokeSlider').value) || 0;
-    const smallRadius = parseInt(document.getElementById('smallRadiusSlider').value) || 0;
-    const radius = parseInt(document.getElementById('radiusSlider').value) || 0;
-    // Create or select the style element in the head to update
+});
+function update_css(cellWidth, cellHeight, stroke, smallRadius, radius) {    // Create or select the style element in the head to update
     let styleElement = document.getElementById('dynamicStyles');
     if (!styleElement) {
         styleElement = document.createElement('style');
@@ -158,9 +160,8 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     });
 }
 
-function drawChordGrid(chord, svgElement, style) {
+function drawChordGrid(chord, svgElement, style, preview = false) {
     svgElement.innerHTML = '';
-
     for (let i = 0; i < gridWidth; i++) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('index', i)
@@ -188,51 +189,63 @@ function drawChordGrid(chord, svgElement, style) {
             svgElement.appendChild(circle);
         });        
     }
-
-    chord.shape.match(/\(?\d+(-\d+)?,\s?\d+(,\s?\d+)?\)?/g).forEach(coord => {
-        if (coord.includes('-')) {
-            const [xRange, y] = coord.replace(/[()]/g, '').split(',').map(part => part.trim());
-            const [x1, x2] = xRange.split('-').map(Number);
-           
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x_coord1', x1);
-            line.setAttribute('x_coord2', x2);
-            line.setAttribute('y_coord', y);
-            line.classList.add('line-round', 'full');
-            svgElement.appendChild(line);
-        } else {
-            const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
-            if (x >= 1 && x <= gridWidth && y >= 1 && y <= gridHeight) {
-
+    if (preview) {
+        for (let x = 1; x <= gridWidth; x++) {
+            for (let y = 1; y < gridHeight; y++) {
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.classList.add('full');
-                circle.classList.add('big');
+                circle.classList.add('preview');
                 circle.setAttribute('x_coord', x);
                 circle.setAttribute('y_coord', y);
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-
-                text.classList.add('finger');
-                text.textContent = z;
-                text.setAttribute('x_coord', x);
-                text.setAttribute('y_coord', y);
-
+                circle.classList.add('full');
+                circle.classList.add('big');
                 svgElement.appendChild(circle);
-                svgElement.appendChild(text);
             }
         }
-    });
-}
+    }
+        (chord.shape.match(/\(?\d+(-\d+)?,\s?\d+(,\s?\d+)?\)?/g) || []).forEach(coord => {
+            if (coord.includes('-')) {
+                const [xRange, y] = coord.replace(/[()]/g, '').split(',').map(part => part.trim());
+                const [x1, x2] = xRange.split('-').map(Number);
+               
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x_coord1', x1);
+                line.setAttribute('x_coord2', x2);
+                line.setAttribute('y_coord', y);
+                line.classList.add('line-round', 'full', 'hover');
+                svgElement.appendChild(line);
+            } else {
+                const [x, y, z] = coord.replace(/[()]/g, '').split(',').map(Number);
+                if (x >= 1 && x <= gridWidth && y >= 1 && y <= gridHeight) {
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.classList.add('full');
+                    circle.classList.add('big');
+                    circle.setAttribute('x_coord', x);
+                    circle.setAttribute('y_coord', y);
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+
+                    text.classList.add('finger');
+                    text.textContent = z;
+                    text.setAttribute('x_coord', x);
+                    text.setAttribute('y_coord', y);
+
+                    svgElement.appendChild(circle);
+                    svgElement.appendChild(text);
+                }
+            }
+        });
+    }
 
 function convertToStickCounting(duration) {
     return 'I'.repeat(duration);
 }
 
-function generateChords(chordInput, style = "default") {
-    const resultContainer = document.getElementById('resultContainer');
+function generateChords(chordInput, resultContainer, style = "default") {
+    // resultContainer is now a parameter instead of being retrieved from the DOM
     resultContainer.innerHTML = '';
-
+    console.log("Result container: " + resultContainer.id);
     const chordEntries = chordInput.split(' ').filter(entry => entry !== '');
-
+    console.log(chordEntries);
     let isGroup = false;
     let groupDiv = null;
 
